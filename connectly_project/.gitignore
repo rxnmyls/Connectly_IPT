@@ -5,7 +5,10 @@ __pycache__/
 # Django
 db.sqlite3
 
-# Secrets / certs
-*.key
+# SSL certs
 *.pem
+*.key
 *.crt
+
+# Environment
+.env

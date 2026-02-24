@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as AuthUser
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
@@ -12,8 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .models import User, Post, Comment
-from .serializers import UserSerializer, PostSerializer, CommentSerializer
+from .models import User as LocalUser, Post, Comment, Like
+from .serializers import UserSerializer, PostSerializer, CommentSerializer, LikeSerializer
 from .permissions import IsPostAuthor
 
 # =========================
@@ -21,7 +21,7 @@ from .permissions import IsPostAuthor
 # =========================
 
 def get_users(request):
-    users = User.objects.all()
+    users = AuthUser.objects.all()
     serializer = UserSerializer(users, many=True)
     return JsonResponse(serializer.data, safe=False)
 
@@ -31,12 +31,12 @@ def create_user(request):
     if request.method == "POST":
         data = json.loads(request.body)
 
-        user = User(
+        user = AuthUser(
             username=data["username"],
             email=data["email"]
         )
 
-        #PASSWORD HASHING
+        # PASSWORD HASHING on auth user
         user.set_password(data["password"])
         user.save()
 
@@ -86,7 +86,14 @@ def create_post(request):
     serializer = PostSerializer(data=request.data)
 
     if serializer.is_valid():
-        serializer.save(author=request.user)
+        # Map authenticated auth.User to posts.User (local user model)
+        local_user, _ = LocalUser.objects.get_or_create(
+            username=request.user.username,
+            defaults={
+                'email': getattr(request.user, 'email', '')
+            }
+        )
+        serializer.save(author=local_user)
         return Response(serializer.data, status=201)
 
     return Response(serializer.errors, status=400)
@@ -125,7 +132,7 @@ class ProtectedView(APIView):
 
 class UserListCreate(APIView):
     def get(self, request):
-        users = User.objects.all()
+        users = AuthUser.objects.all()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 
@@ -140,15 +147,26 @@ class UserListCreate(APIView):
 
 class PostListCreate(APIView):
     def get(self, request):
+        # Public: no auth required to view posts
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
-
     def post(self, request):
+        # Require auth to create posts
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # Map authenticated auth.User to posts.User (local user model)
+            local_user, _ = LocalUser.objects.get_or_create(
+                username=request.user.username,
+                defaults={'email': getattr(request.user, 'email', '')}
+            )
+            serializer.save(author=local_user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -159,10 +177,75 @@ class CommentListCreate(APIView):
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
 
-
     def post(self, request):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostCommentsView(APIView):
+    """
+    GET /posts/{id}/comments: Retrieves all comments for a post.
+    """
+    def get(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        comments = post.comments.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+
+class CommentCreateView(APIView):
+    """
+    POST /posts/{id}/comment: Allows users to comment on a post.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            local_user, _ = LocalUser.objects.get_or_create(
+                username=request.user.username,
+                defaults={'email': getattr(request.user, 'email', '')}
+            )
+            serializer.save(author=local_user, post=post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LikeCreateView(APIView):
+    """
+    POST /posts/{id}/like: Allows users to like a post.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        # Map auth user to local posts.User
+        local_user, _ = LocalUser.objects.get_or_create(
+            username=request.user.username,
+            defaults={'email': getattr(request.user, 'email', '')}
+        )
+
+        # Check if user already liked this post
+        like = Like.objects.filter(user=local_user, post=post).first()
+        
+        if like:
+            # Unlike the post
+            like.delete()
+            return Response(
+                {"message": "Post unliked"},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Like the post
+            like = Like.objects.create(user=local_user, post=post)
+            serializer = LikeSerializer(like)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )

@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework', #ADD DJANGO REST FRAMEWORK
     'posts',
-    'django_extensions', #ADD DJANGO EXTENSIONS
+    'django_extensions',
     'rest_framework.authtoken',
 ]
 

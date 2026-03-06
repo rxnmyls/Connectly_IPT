@@ -38,10 +38,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework', #ADD DJANGO REST FRAMEWORK
+    'django.contrib.sites',           # NEW - required by allauth
+    'rest_framework',
+    'rest_framework.authtoken',       # NEW - required by dj-rest-auth
     'posts',
     'django_extensions',
-    'rest_framework.authtoken',
+    # Google OAuth
+    'allauth',                        # NEW
+    'allauth.account',                # NEW
+    'allauth.socialaccount',          # NEW
+    'allauth.socialaccount.providers.google',  # NEW
+    'dj_rest_auth',                   # NEW
+    'dj_rest_auth.registration',      # NEW
 ]
 
 MIDDLEWARE = [
@@ -52,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # NEW - required by allauth
 ]
 
 ROOT_URLCONF = 'connectly_project.urls'
@@ -146,3 +155,27 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+
+# ─── Google OAuth / Allauth ────────────────────────────────────────────────────
+
+SITE_ID = 1  # NEW - required by allauth
+
+AUTHENTICATION_BACKENDS = [  # NEW
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {  # NEW
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+ACCOUNT_LOGIN_METHODS = {'email'}        # NEW
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # NEW
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # NEW - set to 'mandatory' in production
+
+GOOGLE_CLIENT_ID = '445044362191-78olbucqpcip2v9kr511vqe0p8i0gvj2.apps.googleusercontent.com'  # NEW - replace with your actual Client ID

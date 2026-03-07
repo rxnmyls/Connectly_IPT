@@ -1,16 +1,23 @@
+import os
+
 from django.contrib.auth.models import User as AuthUser
+from django.contrib.sites.models import Site
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 import json
 
+from allauth.socialaccount.helpers import complete_social_login
+from allauth.socialaccount.models import SocialApp, SocialLogin, SocialToken
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User as LocalUser, Post, Comment, Like
 from .serializers import UserSerializer, PostSerializer, CommentSerializer, LikeSerializer
@@ -63,6 +70,64 @@ def login_user(request):
         return JsonResponse({"error": "Invalid credentials"}, status=401)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+class GoogleLoginAPIView(APIView):
+    """POST /auth/google/login
+
+    Accepts a Google OAuth2 access token (or ID token) and returns a JWT pair.
+
+    The client is expected to obtain the Google token via the frontend Google OAuth flow
+    (e.g. Google Sign-In / Google Identity Services) and then send it to this endpoint.
+    """
+
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        access_token = request.data.get('access_token') or request.data.get('id_token')
+        if not access_token:
+            return Response({"detail": "Missing access_token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure we've configured a SocialApp for Google.
+        app = SocialApp.objects.filter(provider=GoogleOAuth2Adapter.provider_id).first()
+        if not app:
+            # Optionally create one from env vars if not present.
+            client_id = os.environ.get('GOOGLE_CLIENT_ID')
+            secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+            if client_id and secret:
+                app = SocialApp.objects.create(
+                    provider=GoogleOAuth2Adapter.provider_id,
+                    name='Google',
+                    client_id=client_id,
+                    secret=secret,
+                )
+                app.sites.add(Site.objects.get_current())
+
+        if not app:
+            return Response(
+                {"detail": "Google SocialApp is not configured. Set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET or configure via the admin."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        token = SocialToken(token=access_token, app=app)
+        adapter = GoogleOAuth2Adapter(request)
+        login = adapter.complete_login(request, app, token, response={"access_token": access_token})
+        login.token = token
+        login.state = SocialLogin.state_from_request(request)
+
+        try:
+            complete_social_login(request, login)
+        except Exception as exc:
+            return Response({"detail": "Google login failed", "error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = login.user
+        if not user.is_active:
+            user.is_active = True
+            user.save()
+
+        refresh = RefreshToken.for_user(user)
+        return Response({"access": str(refresh.access_token), "refresh": str(refresh)})
 
 
 # =========================

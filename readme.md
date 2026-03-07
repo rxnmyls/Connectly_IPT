@@ -88,7 +88,7 @@ Visit:
 - API root (if available)
 - Admin: `http://127.0.0.1:8000/admin/`
 
-![Active](test_images/connectly_active.png)
+![Active](test_images/connectly_active.PNG)
 
 ---
 
@@ -135,7 +135,7 @@ curl -X POST http://127.0.0.1:8000/auth/google/login/ \
 }
 ```
 
-![GoogleAuth](test_images/connectly_googleauth.png)
+![GoogleAuth](test_images/connectly_googleauth.PNG)
 
 ---
 
@@ -161,7 +161,7 @@ curl "http://127.0.0.1:8000/feed/?page=1&page_size=5"
 }
 ```
 
-![Get Feed](test_images/connectly_get_feed.png)
+![Get Feed](test_images/connectly_get_feed.PNG)
 
 ### ✅ Filtering by user
 
@@ -183,7 +183,7 @@ curl "http://127.0.0.1:8000/feed/?page=abc&page_size=5"
 }
 ```
 
-![Error](test_images/connectly_error_page_parameter.png)
+![Error](test_images/connectly_error_page_parameter.PNG)
 
 ---
 
@@ -209,17 +209,3 @@ curl -X POST http://127.0.0.1:8000/api/token/refresh/ \
   -H "Content-Type: application/json" \
   -d '{"refresh":"<jwt-refresh-token>"}'
 ```
-
-- Use the admin UI to manage users, posts, and the Google SocialApp configuration.
-
----
-
-### 🖼️ Images
-
-When adding images to this README, include them where indicated by **Image placeholder**. Example:
-
-```markdown
-![Dependency install output](images/install.png)
-```
-
-Place screenshots (e.g. Postman request/response, admin screens, server output) in an `images/` folder and reference them in the appropriate sections.

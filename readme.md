@@ -25,7 +25,8 @@ python -m venv env
 pip install -r requirements.txt
 ```
 
-> 📌 **Image placeholder:** Add a screenshot of installing dependencies (terminal output).
+![requirements](test_images/connectly_requirements.PNG)
+
 
 ---
 

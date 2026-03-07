@@ -157,7 +157,7 @@ curl -X POST http://127.0.0.1:8000/auth/google/login/ \
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of Postman request/response for Google login.
+![googleauth](test_images/connectly_googleauth.PNG)
 
 ---
 

@@ -35,8 +35,6 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-> 📌 **Image placeholder:** Add a screenshot of successful migration output.
-
 ---
 
 ### 4) Create a superuser
@@ -66,7 +64,7 @@ python manage.py runserver
    - Secret key: **your Google OAuth client secret**
    - Sites: select the site entry (usually `example.com` or `localhost`)
 
-> 📌 **Image placeholder:** Screenshot of the “Social applications” admin form with fields filled.
+![Superuser](test_images/connectly_superuser.png)
 
 
 ### Option B: Environment variables (auto-create)
@@ -90,7 +88,7 @@ Visit:
 - API root (if available)
 - Admin: `http://127.0.0.1:8000/admin/`
 
-> 📌 **Image placeholder:** Screenshot of the running server / admin dashboard.
+![Active](test_images/connectly_active.png)
 
 ---
 
@@ -137,7 +135,7 @@ curl -X POST http://127.0.0.1:8000/auth/google/login/ \
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of Postman request/response for Google login.
+![GoogleAuth](test_images/connectly_googleauth.png)
 
 ---
 
@@ -163,7 +161,7 @@ curl "http://127.0.0.1:8000/feed/?page=1&page_size=5"
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of a successful feed response.
+![Get Feed](test_images/connectly_get_feed.png)
 
 ### ✅ Filtering by user
 
@@ -185,7 +183,7 @@ curl "http://127.0.0.1:8000/feed/?page=abc&page_size=5"
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of invalid parameter error response.
+![Error](test_images/connectly_error_page_parameter.png)
 
 ---
 

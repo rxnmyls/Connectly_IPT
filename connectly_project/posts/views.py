@@ -23,6 +23,8 @@ from .models import User as LocalUser, Post, Comment, Like
 from .serializers import UserSerializer, PostSerializer, CommentSerializer, LikeSerializer
 from .permissions import IsPostAuthor
 
+GOOGLE_CLIENT_ID = "445044362191-78olbucqpcip2v9kr511vqe0p8i0gvj2.apps.googleusercontent.com"                # NEW - replace later
+
 # =========================
 # USERS
 # =========================
@@ -201,7 +203,6 @@ class UserListCreate(APIView):
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 
-
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -361,7 +362,7 @@ class LikeCreateView(APIView):
 
         # Check if user already liked this post
         like = Like.objects.filter(user=local_user, post=post).first()
-        
+
         if like:
             # Unlike the post
             like.delete()
@@ -376,4 +377,58 @@ class LikeCreateView(APIView):
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED
+            )
+
+
+# =========================
+# GOOGLE OAUTH             # NEW
+# =========================
+
+class GoogleLoginView(APIView):
+    def post(self, request):
+        token = request.data.get("token")
+
+        if not token:
+            return Response(
+                {"error": "Token is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verify the token with Google
+            google_data = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                GOOGLE_CLIENT_ID
+            )
+
+            email = google_data.get("email")
+            name = google_data.get("name", "")
+
+            # Find or create user
+            user, created = AuthUser.objects.get_or_create(
+                username=email,
+                defaults={"email": email, "first_name": name}
+            )
+
+            # Issue API token
+            api_token, _ = Token.objects.get_or_create(user=user)
+
+            return Response({
+                "token": api_token.key,
+                "user": email,
+                "new_account": created
+            }, status=status.HTTP_200_OK)
+
+        except ValueError:
+            # Invalid or expired Google token
+            return Response(
+                {"error": "Invalid or expired Google token"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # NEW - required by allauth
 ]
 
 ROOT_URLCONF = 'connectly_project.urls'

@@ -129,8 +129,8 @@ This endpoint expects a **Google OAuth access token** (or an `id_token`), which 
 4. Click **Exchange authorization code for tokens**.
 5. Copy the `access_token` from the response.
 
-![step1](test_images/connectly_googleauth_step1)
-![step2](test_images/connectly_googleauth_step2)
+![step1](test_images/connectly_googleauth_step1.PNG)
+![step2](test_images/connectly_googleauth_step2.PNG)
 
 #### 2.2) Call the API with the Google token
 

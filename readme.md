@@ -25,7 +25,8 @@ python -m venv env
 pip install -r requirements.txt
 ```
 
-> 📌 **Image placeholder:** Add a screenshot of installing dependencies (terminal output).
+![requirements](test_images/connectly_requirements.PNG)
+
 
 ---
 
@@ -34,8 +35,6 @@ pip install -r requirements.txt
 ```bash
 python manage.py migrate
 ```
-
-> 📌 **Image placeholder:** Add a screenshot of successful migration output.
 
 ---
 
@@ -66,7 +65,7 @@ python manage.py runserver
    - Secret key: **your Google OAuth client secret**
    - Sites: select the site entry (usually `example.com` or `localhost`)
 
-> 📌 **Image placeholder:** Screenshot of the “Social applications” admin form with fields filled.
+![Superuser](test_images/connectly_superuser.PNG)
 
 
 ### Option B: Environment variables (auto-create)
@@ -90,7 +89,7 @@ Visit:
 - API root (if available)
 - Admin: `http://127.0.0.1:8000/admin/`
 
-> 📌 **Image placeholder:** Screenshot of the running server / admin dashboard.
+![Active](test_images/connectly_active.PNG)
 
 ---
 
@@ -119,14 +118,35 @@ curl -X POST http://127.0.0.1:8000/api/token/ \
 
 ### 2) Get a JWT via Google OAuth
 
-1. Obtain a Google access token (e.g., from Google OAuth Playground).
-2. Call the API:
+This endpoint expects a **Google OAuth access token** (or an `id_token`), which you acquire by signing in with Google via a real OAuth flow.
+
+#### 2.1) Get a Google access token (using OAuth Playground)
+
+1. Open the OAuth 2.0 Playground: **https://developers.google.com/oauthplayground**
+2. In **Step 1**, search for and select these scopes:
+   - `https://www.googleapis.com/auth/userinfo.email`
+3. Click **Authorize APIs** and sign in with a Google account.
+4. Click **Exchange authorization code for tokens**.
+5. Copy the `access_token` from the response.
+
+![step1](test_images/connectly_googleauth_step1.PNG)
+![step2](test_images/connectly_googleauth_step2.PNG)
+
+#### 2.2) Call the API with the Google token
 
 ```bash
 curl -X POST http://127.0.0.1:8000/auth/google/login/ \
   -H "Content-Type: application/json" \
   -d '{"access_token": "<google-access-token>"}'
 ```
+
+> ✅ Or (if you used `id_token`):
+>
+> ```bash
+> curl -X POST http://127.0.0.1:8000/auth/google/login/ \
+>   -H "Content-Type: application/json" \
+>   -d '{"id_token": "<google-id-token>"}'
+> ```
 
 **Expected response:**
 
@@ -137,7 +157,7 @@ curl -X POST http://127.0.0.1:8000/auth/google/login/ \
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of Postman request/response for Google login.
+![googleauth](test_images/connectly_googleauth.PNG)
 
 ---
 
@@ -163,7 +183,7 @@ curl "http://127.0.0.1:8000/feed/?page=1&page_size=5"
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of a successful feed response.
+![Get Feed](test_images/connectly_get_feed.PNG)
 
 ### ✅ Filtering by user
 
@@ -185,7 +205,7 @@ curl "http://127.0.0.1:8000/feed/?page=abc&page_size=5"
 }
 ```
 
-> 📌 **Image placeholder:** Screenshot of invalid parameter error response.
+![Error](test_images/connectly_error_page_parameter.PNG)
 
 ---
 
@@ -211,17 +231,3 @@ curl -X POST http://127.0.0.1:8000/api/token/refresh/ \
   -H "Content-Type: application/json" \
   -d '{"refresh":"<jwt-refresh-token>"}'
 ```
-
-- Use the admin UI to manage users, posts, and the Google SocialApp configuration.
-
----
-
-### 🖼️ Images
-
-When adding images to this README, include them where indicated by **Image placeholder**. Example:
-
-```markdown
-![Dependency install output](images/install.png)
-```
-
-Place screenshots (e.g. Postman request/response, admin screens, server output) in an `images/` folder and reference them in the appropriate sections.

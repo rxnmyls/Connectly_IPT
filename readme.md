@@ -64,7 +64,7 @@ python manage.py runserver
    - Secret key: **your Google OAuth client secret**
    - Sites: select the site entry (usually `example.com` or `localhost`)
 
-![Superuser](test_images/connectly_superuser.png)
+![Superuser](test_images/connectly_superuser.PNG)
 
 
 ### Option B: Environment variables (auto-create)

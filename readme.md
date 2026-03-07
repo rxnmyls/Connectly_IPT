@@ -118,14 +118,35 @@ curl -X POST http://127.0.0.1:8000/api/token/ \
 
 ### 2) Get a JWT via Google OAuth
 
-1. Obtain a Google access token (e.g., from Google OAuth Playground).
-2. Call the API:
+This endpoint expects a **Google OAuth access token** (or an `id_token`), which you acquire by signing in with Google via a real OAuth flow.
+
+#### 2.1) Get a Google access token (using OAuth Playground)
+
+1. Open the OAuth 2.0 Playground: **https://developers.google.com/oauthplayground**
+2. In **Step 1**, search for and select these scopes:
+   - `https://www.googleapis.com/auth/userinfo.email`
+3. Click **Authorize APIs** and sign in with a Google account.
+4. Click **Exchange authorization code for tokens**.
+5. Copy the `access_token` from the response.
+
+![step1](test_images/connectly_googleauth_step1)
+![step2](test_images/connectly_googleauth_step2)
+
+#### 2.2) Call the API with the Google token
 
 ```bash
 curl -X POST http://127.0.0.1:8000/auth/google/login/ \
   -H "Content-Type: application/json" \
   -d '{"access_token": "<google-access-token>"}'
 ```
+
+> ✅ Or (if you used `id_token`):
+>
+> ```bash
+> curl -X POST http://127.0.0.1:8000/auth/google/login/ \
+>   -H "Content-Type: application/json" \
+>   -d '{"id_token": "<google-id-token>"}'
+> ```
 
 **Expected response:**
 
@@ -136,7 +157,7 @@ curl -X POST http://127.0.0.1:8000/auth/google/login/ \
 }
 ```
 
-![GoogleAuth](test_images/connectly_googleauth.PNG)
+> 📌 **Image placeholder:** Screenshot of Postman request/response for Google login.
 
 ---
 

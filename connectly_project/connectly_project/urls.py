@@ -5,10 +5,13 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from posts.views import GoogleLoginAPIView
+from posts.views import GoogleLoginAPIView, feed
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Feed (root-level shortcut)
+    path('feed/', feed, name='feed'),
 
     # API routes
     path('api/', include('posts.urls')),

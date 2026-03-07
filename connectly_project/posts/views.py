@@ -236,6 +236,69 @@ class PostListCreate(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+def feed(request):
+    """GET /feed
+
+    Returns posts sorted by newest first.
+
+    Query params:
+      - page (int, required)
+      - page_size (int, required)
+      - user (optional username to filter by author)
+    """
+
+    # Validate pagination parameters (must be integers >= 1)
+    try:
+        page = int(request.query_params.get('page', 1))
+        if page < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "Invalid page parameter. Must be an integer >= 1."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        page_size = int(request.query_params.get('page_size', 10))
+        if page_size < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "Invalid page_size parameter. Must be an integer >= 1."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    posts_qs = Post.objects.order_by('-created_at')
+
+    username = request.query_params.get('user')
+    if username:
+        if not AuthUser.objects.filter(username=username).exists():
+            return Response(
+                {"detail": f"User '{username}' not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        posts_qs = posts_qs.filter(author__username=username)
+    elif request.user and request.user.is_authenticated:
+        # Optional: if user is logged in and no explicit filter is passed,
+        # show that user's posts (user-specific feed). Otherwise, return global feed.
+        posts_qs = posts_qs.filter(author__username=request.user.username)
+
+    total = posts_qs.count()
+    offset = (page - 1) * page_size
+    posts = posts_qs[offset : offset + page_size]
+
+    serializer = PostSerializer(posts, many=True)
+    return Response(
+        {
+            'page': page,
+            'page_size': page_size,
+            'total': total,
+            'results': serializer.data,
+        }
+    )
+
+
 class CommentListCreate(APIView):
     def get(self, request):
         comments = Comment.objects.all()

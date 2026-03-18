@@ -2,15 +2,31 @@ from django.db import models
 
 
 class User(models.Model):
+    ROLE_CHOICES = [                          # NEW
+        ('admin', 'Admin'),
+        ('user', 'User'),
+        ('guest', 'Guest'),
+    ]
+
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    role = models.CharField(                  # NEW
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default='user'
+    )
 
     def __str__(self):
         return self.username
 
 
 class Post(models.Model):
+    PRIVACY_CHOICES = [                       # NEW
+        ('public', 'Public'),
+        ('private', 'Private'),
+    ]
+
     content = models.TextField()
     author = models.ForeignKey(
         User,
@@ -18,6 +34,11 @@ class Post(models.Model):
         related_name='posts'
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    privacy = models.CharField(               # NEW
+        max_length=10,
+        choices=PRIVACY_CHOICES,
+        default='public'
+    )
 
     def __str__(self):
         return self.content[:50]

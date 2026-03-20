@@ -5,13 +5,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from posts.views import GoogleLoginAPIView, feed
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Feed (root-level shortcut)
-    path('feed/', feed, name='feed'),
 
     # API routes
     path('api/', include('posts.urls')),
@@ -20,6 +15,8 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Google OAuth login via django-allauth
-    path('auth/google/login/', GoogleLoginAPIView.as_view(), name='google_login'),
+    # Google OAuth / allauth
+    path('auth/', include('dj_rest_auth.urls')),
+    path('auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('auth/social/', include('allauth.socialaccount.urls')),
 ]

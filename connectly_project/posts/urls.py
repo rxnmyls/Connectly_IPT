@@ -1,15 +1,14 @@
 from django.urls import path
 from .views import (
-    PostDetailView, 
-    ProtectedView, 
-    UserListCreate, 
-    PostListCreate, 
+    PostDetailView,
+    ProtectedView,
+    UserListCreate,
+    PostListCreate,
     CommentListCreate,
     PostCommentsView,
     CommentCreateView,
     LikeCreateView,
-    GoogleLoginAPIView,
-    feed,
+    GoogleLoginView,   # FIXED - was GoogleLoginAPIView
 )
 
 urlpatterns = [
@@ -20,7 +19,6 @@ urlpatterns = [
     path('posts/<int:pk>/comments/', PostCommentsView.as_view(), name='post-comments'),
     path('posts/<int:pk>/comment/', CommentCreateView.as_view(), name='create-comment'),
     path('posts/<int:pk>/like/', LikeCreateView.as_view(), name='like-post'),
-    path('feed/', feed, name='feed'),
     path('protected/', ProtectedView.as_view(), name='protected'),
-    path('auth/google/login/', GoogleLoginAPIView.as_view(), name='google-login'),
+    path('auth/google/login/', GoogleLoginView.as_view(), name='google-login'),  # FIXED
 ]

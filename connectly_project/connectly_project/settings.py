@@ -62,7 +62,6 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',  # NEW - required by allauth
 ]
 
 ROOT_URLCONF = 'connectly_project.urls'
@@ -151,12 +150,24 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',  # NEW
+    'PAGE_SIZE': 5,                                                                  # NEW
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# === Caching ===                                                                    # NEW
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'connectly-cache',
+    }
+}
+
+CACHE_TTL = 60 * 5  # Cache for 5 minutes                                          # NEW
 
 # === django-allauth configuration ===
 AUTHENTICATION_BACKENDS = [
@@ -168,8 +179,8 @@ SITE_ID = 1
 
 LOGIN_REDIRECT_URL = '/'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_AUTHENTICATION_METHOD = 'username'
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {'username'}                                                 # UPDATED
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']         # UPDATED
 SOCIALACCOUNT_QUERY_EMAIL = True
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -180,3 +191,5 @@ SOCIALACCOUNT_PROVIDERS = {
         },
     }
 }
+
+GOOGLE_CLIENT_ID = '445044362191-78olbucqpcip2v9kr511vqe0p8i0gvj2.apps.googleusercontent.com'  # NEW

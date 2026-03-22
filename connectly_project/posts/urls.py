@@ -8,7 +8,8 @@ from .views import (
     PostCommentsView,
     CommentCreateView,
     LikeCreateView,
-    GoogleLoginView,   # FIXED - was GoogleLoginAPIView
+    GoogleLoginView,
+    FeedView,              # NEW
 )
 
 urlpatterns = [
@@ -20,5 +21,6 @@ urlpatterns = [
     path('posts/<int:pk>/comment/', CommentCreateView.as_view(), name='create-comment'),
     path('posts/<int:pk>/like/', LikeCreateView.as_view(), name='like-post'),
     path('protected/', ProtectedView.as_view(), name='protected'),
-    path('auth/google/login/', GoogleLoginView.as_view(), name='google-login'),  # FIXED
+    path('auth/google/login/', GoogleLoginView.as_view(), name='google-login'),
+    path('feed/', FeedView.as_view(), name='feed'),                    # NEW
 ]

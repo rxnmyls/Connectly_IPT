@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache                                    # NEW
 import json
 
 from rest_framework.views import APIView
@@ -12,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authtoken.models import Token
+from rest_framework.pagination import PageNumberPagination             # NEW
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -104,7 +106,7 @@ def create_post(request):
 
 
 def get_local_user(request):
-    """Helper: get LocalUser from authenticated request."""  # NEW HELPER
+    """Helper: get LocalUser from authenticated request."""
     return LocalUser.objects.filter(
         username=request.user.username
     ).first()
@@ -122,8 +124,7 @@ class PostDetailView(APIView):
 
         # Privacy check
         if post.privacy == 'private':
-            local_user = get_local_user(request)                      # FIXED
-            # Debug info to help trace issues
+            local_user = get_local_user(request)
             print(f"[DEBUG] request.user.username: {request.user.username}")
             print(f"[DEBUG] local_user found: {local_user}")
             print(f"[DEBUG] post.author: {post.author}")
@@ -145,7 +146,7 @@ class PostDetailView(APIView):
         """
         post = get_object_or_404(Post, pk=pk)
 
-        local_user = get_local_user(request)                          # FIXED
+        local_user = get_local_user(request)
 
         is_admin = local_user and local_user.role == 'admin'
         is_author = local_user and post.author == local_user
@@ -185,14 +186,12 @@ class UserListCreate(APIView):
 class PostListCreate(APIView):
     def get(self, request):
         if request.user and request.user.is_authenticated:
-            local_user = get_local_user(request)                      # FIXED
-            # Show public posts + user's own private posts
+            local_user = get_local_user(request)
             posts = (
                 Post.objects.filter(privacy='public') |
                 Post.objects.filter(author=local_user)
             ).distinct().order_by('-created_at')
         else:
-            # Guests see public posts only
             posts = Post.objects.filter(
                 privacy='public'
             ).order_by('-created_at')
@@ -341,3 +340,51 @@ class GoogleLoginView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+# =========================
+# FEED (PAGINATED + CACHED)  # NEW
+# =========================
+
+class FeedPagination(PageNumberPagination):                           # NEW
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 20
+
+
+class FeedView(APIView):                                              # NEW
+    """
+    GET /api/feed/ — Paginated + Cached news feed
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        page = request.query_params.get('page', 1)
+        cache_key = f"feed_{request.user.username}_page_{page}"
+
+        # Check cache first
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            print(f"[CACHE HIT] {cache_key}")
+            return Response(cached_data)
+
+        print(f"[CACHE MISS] {cache_key}")
+
+        # Get posts with query optimization
+        local_user = get_local_user(request)
+        posts = (
+            Post.objects.filter(privacy='public') |
+            Post.objects.filter(author=local_user)
+        ).distinct().order_by('-created_at').prefetch_related('comments', 'likes')
+
+        # Paginate
+        paginator = FeedPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        serializer = PostSerializer(paginated_posts, many=True)
+        response_data = paginator.get_paginated_response(serializer.data).data
+
+        # Store in cache for 5 minutes
+        cache.set(cache_key, response_data, timeout=60 * 5)
+
+        return Response(response_data)
